@@ -2,10 +2,15 @@ import torch
 from transformers import AutoTokenizer, AutoModel
 
 class BaseEncoder:
-    def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("indolem/indobert-base-uncased")
-        self.model = AutoModel.from_pretrained("indolem/indobert-base-uncased")
+    def __init__(self, model_name_or_path="indolem/indobert-base-uncased"):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+        self.model = AutoModel.from_pretrained(model_name_or_path)
     
-    def encode(self, sentence):
-        x = torch.LongTensor(self.tokenizer.encode(sentence)).view(1,-1)
-        return(self.model(x)[0])
+    def tokenize(self, sentence, max_sentence_length=40):
+        x = torch.LongTensor(self.tokenizer.encode(sentence, padding='max_length', max_length=max_sentence_length)).view(1,-1)
+        return x[0]
+    
+    def encode(self, sentence, max_sentence_length=40):
+        x = torch.LongTensor(self.tokenizer.encode(sentence, padding='max_length', max_length=max_sentence_length)).view(1,-1)
+        x = self.model(x)[0][0]
+        return x
