@@ -6,7 +6,7 @@ class SpanGenerator:
     
     def generate_spans(self, tensor):
         # input tensor shape : (batch_size, sentence_size, d_hidden)
-        # output tensor shape: (batch_size, )
+        # output tensor shape: (batch_size, sentence_size, num_of_span, d_hidden)
         batch_size, sentence_size, d_hidden = tensor.shape
         
         span_tensors_batch = []
@@ -19,10 +19,7 @@ class SpanGenerator:
                 end_idx = span_length
                 for i in range(sentence_size-span_length+1):
                     span_tensor = tensor[batch, start_idx+i:end_idx+i, :]
-                    if span_tensor.shape[0] < self.max_span_length:
-                        zero_tensor = torch.zeros((self.max_span_length-span_length, d_hidden))
-                        span_tensor = torch.cat([span_tensor, zero_tensor])
-                    span_tensors.append(span_tensor)
+                    span_tensors.append(span_tensor.sum(dim=0))
                     span_ranges.append(f'{start_idx+i}-{end_idx+i-1}')
             span_tensors_batch.append(torch.stack(span_tensors))
                 

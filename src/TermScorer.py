@@ -7,9 +7,11 @@ class TermScorer(nn.Module):
         super(TermScorer, self).__init__()
         self.linear_softmax = nn.Sequential(
             nn.Linear(d_hidden, num_of_class),
+            nn.Sigmoid(),
             nn.Softmax(dim=-1)
         )
 
     def forward(self, x):
+        # input x ()
         logits = self.linear_softmax(x)
         return logits
