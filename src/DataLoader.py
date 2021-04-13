@@ -1,8 +1,10 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
 from BaseEncoder import BaseEncoder
-    
-def read_examples_from_file(file_path):
+
+USED_SAMPLE = 200
+
+def read_examples_from_file(file_path, used_sample=USED_SAMPLE):
     texts = []
     te_label_list = [] # dictionary, key = string of token id span "TOKEN_SPAN", value = term type label (ASPECT, OPINION)
     relations = [] # dictionary, key = pair of token id span <ASPECT_SPAN, OPINION_SPAN>, value = sentiment polarity of the relation
@@ -14,7 +16,23 @@ def read_examples_from_file(file_path):
         relation_labels = []
         for line in f:
             line = line.strip()
-            if not line and tokens: # empty line                    
+            
+            if line:
+                line = line.split('\t')
+                if len(line) == 8:
+                    token = line[2]
+                    te_and_relation_labels = line[3].split('|')
+                    
+                    for te_and_relation_label in te_and_relation_labels:
+                        if any(x in te_and_relation_label for x in ['ASPECT', 'SENTIMENT']) or te_and_relation_label == '_':
+                            te_label = te_and_relation_label
+                        else:
+                            relation_label = te_and_relation_label
+                            relation_labels.append(relation_label)
+                    
+                    te_labels.append(te_label)
+                    tokens.append(token)     
+            elif tokens: # empty line    
                 # convert relation to dict
                 new_relation_labels = {}
                 for relation_label in relation_labels:
@@ -37,7 +55,7 @@ def read_examples_from_file(file_path):
                             label_id = te_labels[i].split('[')[1][:-1]
                             if ote_label_id == label_id:
                                 ote_label_idx.append(i)
-
+                    
                     new_relation_labels[(f'{ote_label_idx[0]}-{ote_label_idx[-1]}', f'{ate_label_idx[0]}-{ate_label_idx[-1]}')] = relation_polarity
 
                 # convert te_labels to dict
@@ -68,24 +86,9 @@ def read_examples_from_file(file_path):
                 relation_labels = []
                 count_sentence += 1
 
-            if count_sentence == 200: # FOR TESTING
+            if count_sentence == used_sample: # FOR TESTING
                 break
-
-            line = line.split('\t')
-            if len(line) == 8:
-                token = line[2]
-                te_and_relation_labels = line[3].split('|')
-
-                if len(te_and_relation_labels) > 1:
-                    te_label = te_and_relation_labels[0] if ('ASPECT' or 'SENTIMENT') in te_and_relation_labels[0] else te_and_relation_labels[1]
-                    relation_label = te_and_relation_labels[1] if ('ASPECT' or 'SENTIMENT') in te_and_relation_labels[0] else te_and_relation_labels[0]
-                    relation_labels.append(relation_label)
-                else:
-                    te_label = te_and_relation_labels[0]
-
-                tokens.append(token)
-                te_labels.append(te_label)
-    
+                
     return texts, te_label_list, relations
 
 

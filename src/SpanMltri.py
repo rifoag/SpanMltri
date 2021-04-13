@@ -27,3 +27,9 @@ class SpanMltri(nn.Module):
         logits_relation_scorer, span_pair_ranges = self.relation_scorer(x, span_ranges)
         
         return logits_term_scorer, span_ranges, logits_relation_scorer, span_pair_ranges
+    
+    def show_model_structure(self):
+        print("Model structure: ", self, "\n\n")
+
+        for name, param in self.named_parameters():
+            print(f"Layer: {name} | Size: {param.size()} | Values : {param[:2]} \n")

@@ -7,7 +7,7 @@ class RelationScorer(nn.Module):
         super(RelationScorer, self).__init__()
         self.k = k
         self.span_scorer = nn.Sequential(
-            nn.Linear(d_hidden, num_of_class), # input x (batch_size, num_of_spans, d_hidden), output h (batch_size, num_of_spans, num_of_class)
+            nn.Linear(d_hidden, 1), # input x (batch_size, num_of_spans, d_hidden), output h (batch_size, num_of_spans, num_of_class)
             nn.Sigmoid(),
         )
         
@@ -36,8 +36,9 @@ class RelationScorer(nn.Module):
         # output : x_ranked (batch_size, k*num_of_span, d_hidden), span_ranges_ranked (batch_size, k*num_of_span)
         batch_size, num_of_spans = x.shape[0], x.shape[1]
         
-        h = h[:, :, [0, 2]]
+#         h = h[:, :, [0, 2]]
         h = h.mean(dim=-1) # output dim (batch_size, num_of_spans)
+        
         h = torch.argsort(h, dim=-1, descending=True)
         top_k_indexes = self.get_top_k_percent_span_indexes(h, k)
 
