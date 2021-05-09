@@ -2,15 +2,11 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from BaseEncoder import BaseEncoder
 
-USED_SAMPLE = 200
-
-def read_examples_from_file(file_path, used_sample=USED_SAMPLE):
+def read_examples_from_file(file_path):
     texts = []
-    te_label_list = [] # dictionary, key = string of token id span "TOKEN_SPAN", value = term type label (ASPECT, OPINION)
-    relations = [] # dictionary, key = pair of token id span <ASPECT_SPAN, OPINION_SPAN>, value = sentiment polarity of the relation
+    te_label_dict = [] # dictionary, key = string of token id span "TOKEN_SPAN", value = term type label (ASPECT, OPINION)
+    relation_dict = [] # dictionary, key = pair of token id span <ASPECT_SPAN, OPINION_SPAN>, value = sentiment polarity of the relation
     with open(file_path) as f:
-        count_sentence = 0
-
         tokens = []
         te_labels = []
         relation_labels = []
@@ -32,7 +28,11 @@ def read_examples_from_file(file_path, used_sample=USED_SAMPLE):
                     
                     te_labels.append(te_label)
                     tokens.append(token)     
-            elif tokens: # empty line    
+            elif tokens: # empty line     
+#                 print(tokens)
+#                 print(relation_labels)
+#                 print(te_labels)
+#                 print()
                 # convert relation to dict
                 new_relation_labels = {}
                 for relation_label in relation_labels:
@@ -78,24 +78,25 @@ def read_examples_from_file(file_path, used_sample=USED_SAMPLE):
 
 
                 texts.append(tokens)
-                te_label_list.append(new_te_labels)
-                relations.append(new_relation_labels)
+                te_label_dict.append(new_te_labels)
+                relation_dict.append(new_relation_labels)
 
                 tokens = []
                 te_labels = []
                 relation_labels = []
-                count_sentence += 1
-
-            if count_sentence == used_sample: # FOR TESTING
-                break
-                
-    return texts, te_label_list, relations
+        
+        if tokens:
+            texts.append(tokens)
+            te_label_dict.append(new_te_labels)
+            relation_dict.append(new_relation_labels)
+    
+    return texts, te_label_dict, relation_dict
 
 
 class ReviewDataset(Dataset):
     def __init__(self, file_path, model_name_or_path="indolem/indobert-base-uncased", max_sentence_length=40):
         self.base_encoder= BaseEncoder(model_name_or_path)
-        self.texts, self.te_label_list, self.relations = read_examples_from_file(file_path)
+        self.texts, self.te_label_dict, self.relation_dict = read_examples_from_file(file_path)
         self.transform = self.base_encoder.tokenize
         self.max_sentence_length = max_sentence_length
                                   
@@ -104,7 +105,7 @@ class ReviewDataset(Dataset):
     
     def __getitem__(self, idx):
         text = self.texts[idx]
-        te_label_sequence = self.te_label_list[idx]
+        te_label_sequence = self.te_label_dict[idx]
         
         if self.transform:
             text = self.transform(text, self.max_sentence_length)
