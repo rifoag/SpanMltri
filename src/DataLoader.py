@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
 from BaseEncoder import BaseEncoder
+from transformers import AutoTokenizer
 
 def read_examples_from_file(file_path):
     texts = []
@@ -29,10 +30,6 @@ def read_examples_from_file(file_path):
                     te_labels.append(te_label)
                     tokens.append(token)     
             elif tokens: # empty line     
-#                 print(tokens)
-#                 print(relation_labels)
-#                 print(te_labels)
-#                 print()
                 # convert relation to dict
                 new_relation_labels = {}
                 for relation_label in relation_labels:
@@ -97,7 +94,8 @@ class ReviewDataset(Dataset):
     def __init__(self, file_path, model_name_or_path="indolem/indobert-base-uncased", max_sentence_length=40):
         self.base_encoder= BaseEncoder(model_name_or_path)
         self.texts, self.te_label_dict, self.relation_dict = read_examples_from_file(file_path)
-        self.transform = self.base_encoder.tokenize
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+        self.transform = self.tokenizer.encode
         self.max_sentence_length = max_sentence_length
                                   
     def __len__(self):
@@ -105,9 +103,7 @@ class ReviewDataset(Dataset):
     
     def __getitem__(self, idx):
         text = self.texts[idx]
-        te_label_sequence = self.te_label_dict[idx]
-        
         if self.transform:
-            text = self.transform(text, self.max_sentence_length)
+            text = self.transform(text, return_tensors="pt", is_split_into_words=True, padding='max_length', max_length=self.max_sentence_length, truncation=True)
             
         return text

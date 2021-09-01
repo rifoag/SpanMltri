@@ -5,13 +5,11 @@ from torch import nn
 class TermScorer(nn.Module):
     def __init__(self, d_hidden=768, max_sentence_length=40, num_of_class=3):
         super(TermScorer, self).__init__()
-        self.linear_softmax = nn.Sequential(
-            nn.Linear(d_hidden, num_of_class),
-            nn.Sigmoid(),
-            nn.Softmax(dim=-1)
-        )
+        self.dropout = nn.Dropout(0.20)
+        self.linear = nn.Linear(d_hidden, num_of_class)
 
     def forward(self, x):
-        # input x ()
-        logits = self.linear_softmax(x)
+        # input x (batch_size, num_of_span, d_hidden)
+        x = self.dropout(x)
+        logits = self.linear(x)
         return logits
