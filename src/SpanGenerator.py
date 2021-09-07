@@ -1,8 +1,6 @@
 import torch
 from torch import nn
 
-CLS_OFFSET = 1
-
 class SpanGenerator(nn.Module):
     def __init__(self, max_span_length=8):
         super(SpanGenerator, self).__init__()
@@ -23,9 +21,11 @@ class SpanGenerator(nn.Module):
                 end_idx = span_length
                 for i in range(sentence_size-span_length):
                     span_tensor = tensor[batch, start_idx+i:end_idx+i+1, :]
-                    span_tensors.append(span_tensor.sum(dim=0))
+                    span_tensor = torch.nn.functional.pad(span_tensor, (0, 0, 0, self.max_span_length-span_length), mode='constant', value=0)
+                    span_tensor = torch.flatten(span_tensor)
+                    span_tensors.append(span_tensor)
                     span_ranges.append(f'{start_idx+i-1}-{end_idx+i-1}')
             span_tensors_batch.append(torch.stack(span_tensors))
                 
         return torch.stack(span_tensors_batch), span_ranges
-    
+ 

@@ -6,13 +6,17 @@ class RelationScorer(nn.Module):
     def __init__(self, d_hidden=768, max_sentence_length=40, num_of_class=4, k=0.4):
         super(RelationScorer, self).__init__()
         self.k = k
-        self.dropout = nn.Dropout(0.20)
+        self.dropout = nn.Dropout(0.10)
         self.span_scorer = nn.Sequential(
-            nn.Linear(d_hidden, num_of_class) # input x (batch_size, num_of_spans, d_hidden), output h (batch_size, num_of_spans, num_of_class)
+            nn.Linear(d_hidden, 768),
+            nn.ReLU(),
+            nn.Linear(768, num_of_class) # input x (batch_size, num_of_spans, d_hidden), output h (batch_size, num_of_spans, num_of_class)
         )
         
         self.pair_scorer = nn.Sequential(
-            nn.Linear(3*d_hidden, num_of_class) # input dim (batch_size, num_of_span_pairs, 3*d_hidden)
+            nn.Linear(3*d_hidden, 768),
+            nn.ReLU(),
+            nn.Linear(768, num_of_class) # input dim (batch_size, num_of_span_pairs, 3*d_hidden)
         )
             
     def get_top_k_percent_span_indexes(self, h, k=0.4):
